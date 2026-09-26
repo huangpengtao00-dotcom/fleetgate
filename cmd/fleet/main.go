@@ -35,7 +35,7 @@ const usage = `fleet — run coding agents in parallel; merge only through the g
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprint(os.Stderr, usage)
-		os.Exit(2)
+		os.Exit(gate.CodeUsage)
 	}
 	code, err := run(os.Args[1], os.Args[2:])
 	if err != nil {
@@ -78,10 +78,10 @@ func run(cmd string, args []string) (int, error) {
 		fs := flag.NewFlagSet("launch", flag.ContinueOnError)
 		grace := fs.Duration("grace", 3*time.Second, "confirm the worker is alive after this long")
 		if err := fs.Parse(args); err != nil {
-			return 2, err
+			return gate.CodeUsage, err
 		}
 		if fs.NArg() != 2 {
-			return 2, errors.New("usage: fleet launch <branch> <prompt-file>")
+			return gate.CodeUsage, errors.New("usage: fleet launch <branch> <prompt-file>")
 		}
 		prompt, err := os.ReadFile(fs.Arg(1))
 		if err != nil {
@@ -102,7 +102,7 @@ func run(cmd string, args []string) (int, error) {
 		fs := flag.NewFlagSet("ledger", flag.ContinueOnError)
 		asJSON := fs.Bool("json", false, "machine-readable output")
 		if err := fs.Parse(args); err != nil {
-			return 2, err
+			return gate.CodeUsage, err
 		}
 		rows, err := ledger.Build(c, time.Now())
 		if err != nil {
@@ -124,7 +124,7 @@ func run(cmd string, args []string) (int, error) {
 
 	case "rescue":
 		if len(args) != 1 {
-			return 2, errors.New("usage: fleet rescue <branch>")
+			return gate.CodeUsage, errors.New("usage: fleet rescue <branch>")
 		}
 		rec, err := liveness.Read(workspace.For(c, args[0]).PID)
 		if err != nil {
@@ -144,7 +144,7 @@ func run(cmd string, args []string) (int, error) {
 
 	case "harvest":
 		if len(args) != 1 {
-			return 2, errors.New("usage: fleet harvest <branch>")
+			return gate.CodeUsage, errors.New("usage: fleet harvest <branch>")
 		}
 		res := gate.Harvest(c, args[0])
 		printChecks(res.Checks)
@@ -182,7 +182,7 @@ func run(cmd string, args []string) (int, error) {
 		return br.Code, nil
 	}
 	fmt.Fprint(os.Stderr, usage)
-	return 2, fmt.Errorf("unknown command %q", cmd)
+	return gate.CodeUsage, fmt.Errorf("unknown command %q", cmd)
 }
 
 func countRunning(c *config.Config) (int, error) {
@@ -192,11 +192,17 @@ func countRunning(c *config.Config) (int, error) {
 	}
 	n := 0
 	for _, b := range branches {
+		// An unreadable pid file is an unknown worker, not an absent one:
+		// counting it as zero would let launch exceed max_workers.
 		rec, err := liveness.Read(workspace.For(c, b).PID)
 		if err != nil {
-			continue
+			return 0, fmt.Errorf("cannot count running workers: %w", err)
 		}
-		if ok, _ := liveness.Alive(rec); ok {
+		ok, err := liveness.Alive(rec)
+		if err != nil {
+			return 0, fmt.Errorf("cannot count running workers: %s: %w", b, err)
+		}
+		if ok {
 			n++
 		}
 	}

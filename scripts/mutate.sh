@@ -29,4 +29,7 @@ m "timeout blamed on branch"           internal/gate/checks.go 'if timedOut || i
 m "ledger accumulation bisected"       internal/gate/batch.go 'if s.onlyLedger {' 'if false {' TestLedgerCheckAccumulationIsReconciled ./internal/gate
 m "missing config fields defaulted"    internal/config/config.go 'if len(missing) > 0 {' 'if false {' TestMissingFieldsAreNamed ./internal/config
 m "worktree cut from HEAD"             internal/workspace/workspace.go 'p.Worktree, c.Mainline)' 'p.Worktree, "HEAD")' TestWorktreeStartsFromTheMainline ./internal/launch
+m "unreadable pid file counted idle"  cmd/fleet/main.go 'return 0, fmt.Errorf("cannot count running workers: %w", err)' 'continue' TestUnreadablePidFileIsNotCountedAsIdle ./cmd/fleet
+m "exit code left unpublished"         internal/gate/gate.go '	{CodeNotBranch, "no such branch"},
+' '' TestEveryExitCodeConstantIsPublished ./cmd/fleet
 exit $fail

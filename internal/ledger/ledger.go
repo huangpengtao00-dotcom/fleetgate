@@ -32,6 +32,21 @@ const (
 	Missing     State = "missing" // pid file without branch
 )
 
+// States is the worker-state contract as published, one condition per state.
+// The README table is checked against it.
+var States = []struct {
+	State     State
+	Condition string
+}{
+	{Running, "pid file names a live process with the recorded start time"},
+	{Stale, "running, clean tree, no commit for `stale_after_min`"},
+	{Harvestable, "exited, ahead of main, last log line is `<done_marker> <branch>`, at least one report without placeholders"},
+	{DeadWork, "exited with commits or uncommitted changes, not done"},
+	{DeadEmpty, "exited with nothing"},
+	{Harvested, "merged by the gate"},
+	{Missing, "pid file whose branch no longer exists"},
+}
+
 // Row is one line of the ledger.
 type Row struct {
 	Branch     string

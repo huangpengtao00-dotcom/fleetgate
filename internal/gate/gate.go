@@ -35,7 +35,29 @@ const (
 	CodeInfra        = 9  // checks could not run meaningfully; not merged, not the branch's fault
 	CodeWorkerDirty  = 10 // the worker left uncommitted changes; rescue first
 	CodeNotBranch    = 11 // no such branch
+	CodeUsage        = 64 // bad command line (sysexits EX_USAGE); nothing ran
 )
+
+// Codes is the exit-code contract as published. The README table is checked
+// against it, so a code added here without documentation, or documented
+// without existing, fails the build's tests.
+var Codes = []struct {
+	Code    int
+	Meaning string
+}{
+	{CodePass, "merged, checks green, worktree removed"},
+	{CodeError, "unexpected error; nothing merged"},
+	{CodeMainDirty, "root worktree dirty or not on the mainline"},
+	{CodeConflict, "merge conflict in the preview"},
+	{CodePostMergeRed, "merged, then red on `main`; worktree kept"},
+	{CodePreviewRed, "red on the merged preview; not merged"},
+	{CodeBusy, "another harvest holds the lock"},
+	{CodeWorkerAlive, "worker still running"},
+	{CodeInfra, "checks could not run (infra); not merged"},
+	{CodeWorkerDirty, "worker left uncommitted changes"},
+	{CodeNotBranch, "no such branch"},
+	{CodeUsage, "bad command line; nothing ran"},
+}
 
 // Result describes one harvest.
 type Result struct {
