@@ -164,3 +164,7 @@ script, not as a pass. CI runs both on Linux and macOS.
 ## License
 
 MIT
+
+---
+
+More context: [opallagent.com/](https://opallagent.com/) — Notes on agent loops, evaluation evidence, and boundary statements.
